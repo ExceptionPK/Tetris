@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import Tetris from './Tetris';
+import Tetris from './Components/Tetris';
 
 const App = () => {
   return (
