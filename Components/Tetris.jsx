@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, Button, Dimensions, TouchableOpacity } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import Board from './Board';
+import Piece from './Piece';
+import PiecePreview from './PiecePreview';
 import { BOARD_WIDTH, BOARD_HEIGHT } from './constants';
 
 // Define las diferentes formas de las piezas del Tetris
 const TETROMINOS = {
-    0: { shape: [[0]], color: 'transparent' },
+    //0: { shape: [[0]], color: 'transparent' },
     I: {
         shape: [
             [0, 0, 0, 0],
@@ -69,13 +71,17 @@ const Tetris = () => {
     const [board, setBoard] = useState([]);
     const [currentPiece, setCurrentPiece] = useState(null);
     const [currentPiecePosition, setCurrentPiecePosition] = useState({ x: 0, y: 0 });
+    const [score, setScore] = useState(0);
+    const [gameOver, setGameOver] = useState(false);
+    const [speed, setSpeed] = useState(1000);
+    const [nextPiece, setNextPiece] = useState(null);
 
-    const { width, height } = Dimensions.get('window');
-    const cellSize = Math.floor(Math.min(width, height) / BOARD_WIDTH);
 
     useEffect(() => {
         initializeBoard();
         generateNewPiece();
+        const timer = setInterval(movePieceDown, speed);
+        return () => clearInterval(timer);
     }, []);
 
     const initializeBoard = () => {
@@ -88,7 +94,8 @@ const Tetris = () => {
     const generateNewPiece = () => {
         const tetrominoKeys = Object.keys(TETROMINOS);
         const randomKey = tetrominoKeys[Math.floor(Math.random() * tetrominoKeys.length)];
-        setCurrentPiece(TETROMINOS[randomKey]);
+        const newPiece = TETROMINOS[randomKey];
+        setCurrentPiece(newPiece);
         setCurrentPiecePosition({ x: Math.floor(BOARD_WIDTH / 2) - 2, y: 0 });
     };
 
@@ -109,47 +116,50 @@ const Tetris = () => {
         if (!currentPiece) return false;
         const { shape } = currentPiece;
         const { x, y } = currentPiecePosition;
-
-        // Verifica si hay alguna colisión con el borde inferior del tablero
+    
+        // Verificar si hay alguna colisión con el fondo del tablero
         if (y + shape.length >= BOARD_HEIGHT) return false;
-
-        // Verifica si hay alguna colisión con los bordes laterales del tablero
+    
+        // Verificar si hay alguna colisión con las piezas existentes en el tablero
         for (let row = 0; row < shape.length; row++) {
             for (let col = 0; col < shape[row].length; col++) {
                 if (shape[row][col] !== 0) {
                     const boardRow = y + row + 1;
                     const boardCol = x + col;
-                    if (boardRow >= 0 && boardRow < BOARD_HEIGHT && (boardCol < 0 || boardCol >= BOARD_WIDTH || board[boardRow][boardCol] !== 0)) {
+                    if (boardRow < 0 || boardRow >= BOARD_HEIGHT || boardCol < 0 || boardCol >= BOARD_WIDTH || board[boardRow][boardCol] !== 0) {
                         return false;
                     }
                 }
             }
         }
-
+    
         return true;
     };
 
     const mergePieceWithBoard = () => {
-        if (!currentPiece) return;
-        const { shape } = currentPiece;
-        const { x, y } = currentPiecePosition;
+    if (!currentPiece) return;
+    const { shape } = currentPiece;
+    const { x, y } = currentPiecePosition;
 
-        // Fusiona la pieza con el tablero
-        for (let row = 0; row < shape.length; row++) {
-            for (let col = 0; col < shape[row].length; col++) {
-                if (shape[row][col] !== 0) {
-                    const boardRow = y + row;
-                    const boardCol = x + col;
+    // Fusiona la pieza con el tablero
+    for (let row = 0; row < shape.length; row++) {
+        for (let col = 0; col < shape[row].length; col++) {
+            if (shape[row][col] !== 0) {
+                const boardRow = y + row;
+                const boardCol = x + col;
+                if (boardRow >= 0 && boardRow < BOARD_HEIGHT && boardCol >= 0 && boardCol < BOARD_WIDTH) {
                     board[boardRow][boardCol] = shape[row][col];
                 }
             }
         }
-    };
+    }
+};
 
     const checkForLines = () => {
         let linesCleared = 0;
         for (let row = 0; row < BOARD_HEIGHT; row++) {
-            if (board[row].every(cell => cell !== 0)) {
+            // Verificar si la fila no está vacía y si todas las celdas son diferentes de 0
+            if (board[row] && board[row].every(cell => cell !== 0)) {
                 // Elimina la línea completa
                 board.splice(row, 1);
                 // Agrega una nueva línea en la parte superior
@@ -228,6 +238,7 @@ const Tetris = () => {
 
     return (
         <View style={styles.container}>
+            <Text style={styles.score}>Score: {score}</Text>
             <Board board={board} currentPiece={currentPiece} currentPiecePosition={currentPiecePosition} />
             <View style={styles.controls}>
                 <View style={styles.controlButton}>
@@ -261,7 +272,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         right: 150,
-        bottom: 270,
+        bottom: 280,
     },
     boardContainer: {
         alignItems: 'center',
@@ -279,6 +290,12 @@ const styles = StyleSheet.create({
     controlButtonRotate: {
         paddingHorizontal: 15,
         left: 20,
+    },
+    score: {
+        fontSize: 30,
+        bottom: 10,
+        left: 240,
+        fontWeight: 'bold',
     },
 });
 
