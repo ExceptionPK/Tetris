@@ -80,8 +80,9 @@ const Tetris = () => {
     useEffect(() => {
         initializeBoard();
         generateNewPiece();
-        const timer = setInterval(movePieceDown, speed);
-        return () => clearInterval(timer);
+        //Descomentar para que los bloques se muevan hacia abajo (bugeado)
+        //const timer = setInterval(movePieceDown, speed);
+        //return () => clearInterval(timer);
     }, []);
 
     const initializeBoard = () => {
