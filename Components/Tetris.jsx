@@ -11,16 +11,12 @@ const TETROMINOS = {
     //0: { shape: [[0]], color: 'transparent' },
     I: {
         shape: [
-            [0, 0, 0, 0],
             [1, 1, 1, 1],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
         ],
         color: 'cyan',
     },
     J: {
         shape: [
-            [0, 0, 0],
             [2, 2, 2],
             [0, 0, 2],
         ],
@@ -28,7 +24,6 @@ const TETROMINOS = {
     },
     L: {
         shape: [
-            [0, 0, 0],
             [3, 3, 3],
             [3, 0, 0],
         ],
@@ -43,7 +38,6 @@ const TETROMINOS = {
     },
     S: {
         shape: [
-            [0, 0, 0],
             [0, 5, 5],
             [5, 5, 0],
         ],
@@ -51,7 +45,6 @@ const TETROMINOS = {
     },
     T: {
         shape: [
-            [0, 0, 0],
             [6, 6, 6],
             [0, 6, 0],
         ],
@@ -59,7 +52,6 @@ const TETROMINOS = {
     },
     Z: {
         shape: [
-            [0, 0, 0],
             [7, 7, 0],
             [0, 7, 7],
         ],
