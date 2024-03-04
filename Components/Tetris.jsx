@@ -11,16 +11,12 @@ const TETROMINOS = {
     //0: { shape: [[0]], color: 'transparent' },
     I: {
         shape: [
-            [0, 0, 0, 0],
             [1, 1, 1, 1],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
         ],
         color: 'cyan',
     },
     J: {
         shape: [
-            [0, 0, 0],
             [2, 2, 2],
             [0, 0, 2],
         ],
@@ -28,7 +24,6 @@ const TETROMINOS = {
     },
     L: {
         shape: [
-            [0, 0, 0],
             [3, 3, 3],
             [3, 0, 0],
         ],
@@ -43,7 +38,6 @@ const TETROMINOS = {
     },
     S: {
         shape: [
-            [0, 0, 0],
             [0, 5, 5],
             [5, 5, 0],
         ],
@@ -51,7 +45,6 @@ const TETROMINOS = {
     },
     T: {
         shape: [
-            [0, 0, 0],
             [6, 6, 6],
             [0, 6, 0],
         ],
@@ -59,7 +52,6 @@ const TETROMINOS = {
     },
     Z: {
         shape: [
-            [0, 0, 0],
             [7, 7, 0],
             [0, 7, 7],
         ],
@@ -73,16 +65,23 @@ const Tetris = () => {
     const [currentPiecePosition, setCurrentPiecePosition] = useState({ x: 0, y: 0 });
     const [score, setScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
-    const [speed, setSpeed] = useState(1000);
-    const [nextPiece, setNextPiece] = useState(null);
 
 
     useEffect(() => {
         initializeBoard();
         generateNewPiece();
-        const timer = setInterval(movePieceDown, speed);
-        return () => clearInterval(timer);
+        startAutoDrop();
     }, []);
+
+    useEffect(() => {
+        if (!canMoveDown()) {
+            mergePieceWithBoard();
+            checkForLines();
+            generateNewPiece();
+        }
+    }, [currentPiecePosition]);
+
+
 
     const initializeBoard = () => {
         const newBoard = Array.from({ length: BOARD_HEIGHT }, () =>
@@ -97,6 +96,21 @@ const Tetris = () => {
         const newPiece = TETROMINOS[randomKey];
         setCurrentPiece(newPiece);
         setCurrentPiecePosition({ x: Math.floor(BOARD_WIDTH / 2) - 2, y: 0 });
+    };
+
+    // Para reiniciar el juego
+    const restartGame = () => {
+        initializeBoard();
+        setScore(0);
+        setGameOver(false);
+        generateNewPiece();
+    };
+
+    const startAutoDrop = () => {
+        const intervalId = setInterval(() => {
+            movePieceDown();
+        }, 1000);
+        return () => clearInterval(intervalId);
     };
 
     const movePieceDown = () => {
@@ -116,10 +130,10 @@ const Tetris = () => {
         if (!currentPiece) return false;
         const { shape } = currentPiece;
         const { x, y } = currentPiecePosition;
-    
+
         // Verificar si hay alguna colisión con el fondo del tablero
         if (y + shape.length >= BOARD_HEIGHT) return false;
-    
+
         // Verificar si hay alguna colisión con las piezas existentes en el tablero
         for (let row = 0; row < shape.length; row++) {
             for (let col = 0; col < shape[row].length; col++) {
@@ -132,28 +146,28 @@ const Tetris = () => {
                 }
             }
         }
-    
+
         return true;
     };
 
     const mergePieceWithBoard = () => {
-    if (!currentPiece) return;
-    const { shape } = currentPiece;
-    const { x, y } = currentPiecePosition;
+        if (!currentPiece) return;
+        const { shape } = currentPiece;
+        const { x, y } = currentPiecePosition;
 
-    // Fusiona la pieza con el tablero
-    for (let row = 0; row < shape.length; row++) {
-        for (let col = 0; col < shape[row].length; col++) {
-            if (shape[row][col] !== 0) {
-                const boardRow = y + row;
-                const boardCol = x + col;
-                if (boardRow >= 0 && boardRow < BOARD_HEIGHT && boardCol >= 0 && boardCol < BOARD_WIDTH) {
-                    board[boardRow][boardCol] = shape[row][col];
+        // Fusiona la pieza con el tablero
+        for (let row = 0; row < shape.length; row++) {
+            for (let col = 0; col < shape[row].length; col++) {
+                if (shape[row][col] !== 0) {
+                    const boardRow = y + row;
+                    const boardCol = x + col;
+                    if (boardRow >= 0 && boardRow < BOARD_HEIGHT && boardCol >= 0 && boardCol < BOARD_WIDTH) {
+                        board[boardRow][boardCol] = shape[row][col];
+                    }
                 }
             }
         }
-    }
-};
+    };
 
     const checkForLines = () => {
         let linesCleared = 0;
@@ -230,15 +244,30 @@ const Tetris = () => {
             shape.map((row) => row[columnIndex]).reverse()
         );
 
+        // Verificar si la rotación colisiona con los bordes del tablero
+        const { x, y } = currentPiecePosition;
+        const maxX = BOARD_WIDTH - rotatedShape[0].length;
+        const maxY = BOARD_HEIGHT - rotatedShape.length;
+        const newPositionX = Math.min(Math.max(0, x), maxX);
+        const newPositionY = Math.min(Math.max(0, y), maxY);
+
         setCurrentPiece((prevPiece) => ({
             ...prevPiece,
             shape: rotatedShape,
         }));
+
+        setCurrentPiecePosition({ x: newPositionX, y: newPositionY });
     };
+
 
     return (
         <View style={styles.container}>
-            <Text style={styles.score}>Score: {score}</Text>
+            <View style={styles.topBar}>
+                <TouchableOpacity style={styles.restartButton} onPress={restartGame}>
+                    <Text style={styles.restartButtonText}>Restart</Text>
+                </TouchableOpacity>
+                <Text style={styles.scoreText}>Score: {score}</Text>
+            </View>
             <Board board={board} currentPiece={currentPiece} currentPiecePosition={currentPiecePosition} />
             <View style={styles.controls}>
                 <View style={styles.controlButton}>
@@ -278,6 +307,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    topBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        left: 80,
+        bottom: 10,
+    },
     controls: {
         flexDirection: 'row',
         left: 150,
@@ -291,10 +326,22 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         left: 20,
     },
-    score: {
-        fontSize: 30,
-        bottom: 10,
-        left: 240,
+    scoreText: {
+        fontSize: 25,
+        top: 2,
+        left: 130,
+        fontWeight: 'bold',
+    },
+    restartButton: {
+        backgroundColor: 'white',
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: 'black',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+    },
+    restartButtonText: {
+        color: 'black',
         fontWeight: 'bold',
     },
 });
